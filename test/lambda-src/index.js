@@ -1,13 +1,3 @@
-const mysql = require('promise-mysql');
-const builder = require('xmlbuilder');
-const db_config = {
-  host   : process.env['endpoint'],
-  user   : process.env['user'],
-  password : process.env['password'],
-  database : process.env['db']
-};
-const table = process.env['table'];
-const pool = mysql.createPool(db_config);
  
 exports.handler = async (event) => {
   let response = {};
@@ -24,20 +14,7 @@ exports.handler = async (event) => {
   } finally {
     return response;
   }
- 
 };
- 
-function buildXml (results) {
-  const resultsNum = results.length;
-  let root = builder.create('items');
-  for (let i = 0; i < resultsNum; i++) {
-    let item = root.ele('item');
-    item.att('value', results[i].value);
-    item.att('display', results[i].display);
-  }
-  const xml = root.end({ pretty: true});
-  return xml;
-}
  
 function formatResponse (body) {
   const response = {

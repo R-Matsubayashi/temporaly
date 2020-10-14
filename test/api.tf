@@ -44,11 +44,6 @@ resource "aws_lambda_function" "myRdsFunction" {
 
   environment {
     variables = {
-      "db"       = var.db_name
-      "endpoint" = aws_rds_cluster.db-cluster.endpoint // RDS Proxy を使用する場合は変更する
-      "password" = var.db_password
-      "user"     = var.db_username
-      "table"    = var.db_table
     }
   }
 

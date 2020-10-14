@@ -4,6 +4,7 @@
 variable "aws_region" {
   type        = string
   description = "AWS region."
+  default     = "us-east-2"
 }
 
 ####################
@@ -18,6 +19,7 @@ variable "vpc_cidr_block" {
 variable "my_ip" {
   type        = string
   description = "IP address to grant access to DB."
+  default     = "125.9.28.30/32"
 }
 
 ####################
@@ -45,6 +47,7 @@ variable "db_username" {
 variable "db_password" {
   type        = string
   description = "Password for DB master user."
+  default     = "aaaa"
 }
 
 variable "db_instance_identifier" {

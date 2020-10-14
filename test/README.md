@@ -33,7 +33,7 @@ db_password = "password1234"
 ディレクトリ内で `terraform init` を実行してワークスペースとして初期化し、
 `terraform plan -var-file=vars.tfvars` で変更内容を確認します。
 
-変更内容に問題がなければ、`tarraform apply -var-file=vars.tfvars` で変更を実行します。
+変更内容に問題がなければ、`terraform apply -var-file=vars.tfvars` で変更を実行します。
 
 次のように表示されると AWS のリソース作成は完了です。
 ```
