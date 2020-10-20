@@ -44,6 +44,7 @@ resource "aws_lambda_function" "myRdsFunction" {
 
   environment {
     variables = {
+      dummy = "dummy"
     }
   }
 
