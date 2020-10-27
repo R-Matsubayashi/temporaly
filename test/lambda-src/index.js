@@ -3,10 +3,11 @@ exports.handler = async (event) => {
   let response = {};
   console.log("Starting query ...");
   try {
-    const xpath = require('xpath');
+    //const xpath = require('xpath');
     //const dom = require('xmldom').DOMParser;
     const fs = require('fs');
     const xml = fs.readFileSync('test.xml', "utf-8");
+    console.log(xml);
     response = formatResponse(xml);
   } catch (e) {
     console.log(e);
@@ -17,6 +18,7 @@ exports.handler = async (event) => {
 };
  
 function formatResponse (body) {
+  console.log("format");
   const response = {
     "statusCode": 200,
     "headers": {
