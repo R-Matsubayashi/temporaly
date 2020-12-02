@@ -1,13 +1,15 @@
- 
+const parser = require('xml2json');
+const fs = require('fs');
 exports.handler = async (event) => {
   let response = {};
-  console.log("Starting query ...");
+  console.log("Starting ...");
+  let quary = event.queryStringParameters.quary;
+  let parent = event.queryStringParameters.parent;
+  //let values = event.multiValueQueryStringParameters.values;
   try {
-    //const xpath = require('xpath');
-    //const dom = require('xmldom').DOMParser;
-    const fs = require('fs');
-    const xml = fs.readFileSync('test.xml', "utf-8");
-    console.log(xml);
+    const xml = fs.readFileSync('choice.xml', "utf-8");
+    const json = parser.toJson(xml);
+    console.log(json)
     response = formatResponse(xml);
   } catch (e) {
     console.log(e);
@@ -16,9 +18,8 @@ exports.handler = async (event) => {
     return response;
   }
 };
- 
+
 function formatResponse (body) {
-  console.log("format");
   const response = {
     "statusCode": 200,
     "headers": {
@@ -29,7 +30,7 @@ function formatResponse (body) {
   };
   return response;
 }
- 
+
 function formatError (error) {
   const response = {
     "statusCode": error.statusCode,
