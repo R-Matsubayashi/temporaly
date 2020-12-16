@@ -3,14 +3,33 @@ const fs = require('fs');
 exports.handler = async (event) => {
   let response = {};
   console.log("Starting ...");
-  let quary = event.queryStringParameters.quary;
-  let parent = event.queryStringParameters.parent;
+  let quary = "";
+  let parent = "";
+  if (event.queryStringParameters !== null) {
+    quary = event.queryStringParameters.quary;
+    parent = event.queryStringParameters.parent;
+  }
   //let values = event.multiValueQueryStringParameters.values;
   try {
-    const xml = fs.readFileSync('choice.xml', "utf-8");
-    const json = parser.toJson(xml);
-    console.log(json)
-    response = formatResponse(xml);
+    const read = fs.readFileSync('choice.xml', "utf-8");
+    const json = JSON.parse(parser.toJson(read));
+    let xml = {
+      items: {
+        item:[]
+      }
+    };
+    if(quary !== ""){
+      const item = json.items.item;
+      for(let i = 0; i < json.length; i++){
+        if(item[i].indexOf(quary) !== -1){
+          xml.items.item.push(item[i]);
+        }
+      }
+    }else{
+      xml = json;
+    }
+    xml = JSON.stringify(xml)
+    response = formatResponse(parser.toXml(xml,'utf-8'));
   } catch (e) {
     console.log(e);
     response = formatError(e);
@@ -19,7 +38,7 @@ exports.handler = async (event) => {
   }
 };
 
-function formatResponse (body) {
+function formatResponse(body) {
   const response = {
     "statusCode": 200,
     "headers": {
@@ -31,7 +50,7 @@ function formatResponse (body) {
   return response;
 }
 
-function formatError (error) {
+function formatError(error) {
   const response = {
     "statusCode": error.statusCode,
     "headers": {
