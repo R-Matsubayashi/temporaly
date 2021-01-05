@@ -1,5 +1,4 @@
 const parser = require('xml2json');
-const builder = require('xmlbuilder');
 const fs = require('fs');
 exports.handler = async (event) => {
   let response = {};
@@ -44,7 +43,6 @@ exports.handler = async (event) => {
         }
       }
     }
-    //const responseXml = buildXml(responseJson);
     const responseXml = parser.toXml(responseJson)
     response = formatResponse(responseXml);
   } catch (e) {
@@ -78,17 +76,4 @@ function formatError(error) {
     "body": error.code + ": " + error.message
   };
   return response;
-}
-
-function buildXml(json) {
-  const resultsNum = json.items.item.length;
-  let root = builder.create('items');
-  for (let i = 0; i < resultsNum; i++) {
-    let item = root.ele('item');
-    console.log(json.items.item[i].value)
-    item.att('value', json.items.item[i].value);
-    item.att('display', json.items.item[i].display);
-  }
-  const xml = root.end({ pretty: true });
-  return xml;
 }
