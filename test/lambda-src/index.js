@@ -9,9 +9,11 @@ exports.handler = async (event) => {
     query = event.queryStringParameters.query;
     parent = event.queryStringParameters.parent;
     if (query === undefined) {
+      //指定されてない場合空文字列にする
       query = "";
     }
     if (parent === undefined) {
+      //指定されてない場合空文字列にする
       parent = "";
     }
   }
@@ -19,8 +21,9 @@ exports.handler = async (event) => {
   if (event.multiValueQueryStringParameters !== null) {
     values = event.multiValueQueryStringParameters.values;
   }
+
   try {
-    const readXml = fs.readFileSync('choice.xml', "utf-8");
+    const readXml = await streamFileRead('choice.xml');
     const readJson = JSON.parse(parser.toJson(readXml));
     let responseJson = {
       items: {
@@ -76,4 +79,27 @@ function formatError(error) {
     "body": error.code + ": " + error.message
   };
   return response;
+}
+
+function streamFileRead(fileName){
+  const stream = fs.createReadStream(fileName, {
+    encoding: "utf8",         // 文字コード
+    highWaterMark: 1024       // 一度に取得するbyte数
+  });
+  let data = "";     // 読み込んだデータ
+  
+  // データを取得する度に実行される
+  stream.on("data", (chunk) => {
+    data += chunk.toString("utf8");
+  });
+
+  // データをすべて読み取り終わったら実行される
+  stream.on("end", () => {
+    return data;
+  });
+
+  // エラー処理
+  stream.on("error", (err) => {
+    console.log(err.message);
+  });
 }
