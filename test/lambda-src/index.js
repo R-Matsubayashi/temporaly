@@ -1,35 +1,52 @@
 const parser = require('xml2json');
+const builder = require('xmlbuilder');
 const fs = require('fs');
 exports.handler = async (event) => {
   let response = {};
   console.log("Starting ...");
-  let quary = "";
+  let query = "";
   let parent = "";
   if (event.queryStringParameters !== null) {
-    quary = event.queryStringParameters.quary;
+    query = event.queryStringParameters.query;
     parent = event.queryStringParameters.parent;
+    if (query === undefined) {
+      query = "";
+    }
+    if (parent === undefined) {
+      parent = "";
+    }
   }
-  //let values = event.multiValueQueryStringParameters.values;
+  let values = [];
+  if (event.multiValueQueryStringParameters !== null) {
+    values = event.multiValueQueryStringParameters.values;
+  }
   try {
-    const read = fs.readFileSync('choice.xml', "utf-8");
-    const json = JSON.parse(parser.toJson(read));
-    let xml = {
+    const readXml = fs.readFileSync('choice.xml', "utf-8");
+    const readJson = JSON.parse(parser.toJson(readXml));
+    let responseJson = {
       items: {
-        item:[]
+        item: []
       }
     };
-    if(quary !== ""){
-      const item = json.items.item;
-      for(let i = 0; i < json.length; i++){
-        if(item[i].indexOf(quary) !== -1){
-          xml.items.item.push(item[i]);
+    const items = readJson.items.item;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].display.indexOf(query) !== -1) {
+        //displayにqueryで指定された文字列を含むものを選ぶ
+        //queryが指定されていない場合は全て通す
+        if (items[i].value.startsWith(parent)) {
+          //valueがparentで指定された文字列から始まるものを選ぶ
+          //parentが指定されていない場合は全て通す
+          if ((values === undefined) || (values.length === 0) || (values.indexOf(items[i].value) !== -1)) {
+            //valueがvaluesに含まれる文字列と完全一致するものを選ぶ
+            //valuesが指定されていない場合は全て通す
+            responseJson.items.item.push(items[i]);
+          }
         }
       }
-    }else{
-      xml = json;
     }
-    xml = JSON.stringify(xml)
-    response = formatResponse(parser.toXml(xml,'utf-8'));
+    //const responseXml = buildXml(responseJson);
+    const responseXml = parser.toXml(responseJson)
+    response = formatResponse(responseXml);
   } catch (e) {
     console.log(e);
     response = formatError(e);
@@ -61,4 +78,17 @@ function formatError(error) {
     "body": error.code + ": " + error.message
   };
   return response;
+}
+
+function buildXml(json) {
+  const resultsNum = json.items.item.length;
+  let root = builder.create('items');
+  for (let i = 0; i < resultsNum; i++) {
+    let item = root.ele('item');
+    console.log(json.items.item[i].value)
+    item.att('value', json.items.item[i].value);
+    item.att('display', json.items.item[i].display);
+  }
+  const xml = root.end({ pretty: true });
+  return xml;
 }
