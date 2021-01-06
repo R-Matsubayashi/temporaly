@@ -23,7 +23,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const readXml = await streamFileRead('choice.xml');
+    const readXml = await streamFileRead('choice.xml'); //ファイル読み込み、完了まで待機
     const readJson = JSON.parse(parser.toJson(readXml));
     let responseJson = {
       items: {
@@ -81,25 +81,27 @@ function formatError(error) {
   return response;
 }
 
-function streamFileRead(fileName){
-  const stream = fs.createReadStream(fileName, {
-    encoding: "utf8",         // 文字コード
-    highWaterMark: 1024       // 一度に取得するbyte数
-  });
-  let data = "";     // 読み込んだデータ
-  
-  // データを取得する度に実行される
-  stream.on("data", (chunk) => {
-    data += chunk.toString("utf8");
-  });
+function streamFileRead(fileName) {
+  return new Promise((resolve, reject) => {
+    const stream = fs.createReadStream(fileName, {
+      encoding: "utf8",         // 文字コード
+      highWaterMark: 1024       // 一度に取得するbyte数
+    });
+    let data = "";     // 読み込んだデータ
 
-  // データをすべて読み取り終わったら実行される
-  stream.on("end", () => {
-    return data;
-  });
+    // データを取得する度に実行される
+    stream.on("data", (chunk) => {
+      data += chunk.toString("utf8");
+    });
 
-  // エラー処理
-  stream.on("error", (err) => {
-    console.log(err.message);
-  });
+    // データをすべて読み取り終わったら実行される
+    stream.on("end", () => {
+      resolve(data)
+    });
+
+    // エラー処理
+    stream.on("error", (err) => {
+      reject(err.message);
+    });
+  })
 }
