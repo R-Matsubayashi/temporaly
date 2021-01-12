@@ -77,7 +77,7 @@ function streamFileRead(fileName, query, parent, values) {
         const attrsTmp = {
           value: attrs.value,
           display: attrs.display.slice(0, -2)
-        }
+        }//display の最後に' /'が含まれてしまうため取り除く
         //要件に合うもののみ data に入れる
         if (attrsTmp.display.indexOf(query) !== -1) {
           //display に query で指定された文字列を含むものを選ぶ
