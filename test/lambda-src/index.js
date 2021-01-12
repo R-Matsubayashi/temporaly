@@ -1,52 +1,28 @@
-const parser = require('xml2json');
+const xmlparser = require('xml2json');
 const fs = require('fs');
+const xmlstream = require('node-xml-stream')
+
 exports.handler = async (event) => {
   let response = {};
   console.log("Starting ...");
   let query = "";
   let parent = "";
-  if (event.queryStringParameters !== null) {
-    query = event.queryStringParameters.query;
-    parent = event.queryStringParameters.parent;
-    if (query === undefined) {
-      //指定されてない場合空文字列にする
-      query = "";
+  if (event.queryStringParameters) {
+    if (event.queryStringParameters.query) {
+      query = event.queryStringParameters.query;
     }
-    if (parent === undefined) {
-      //指定されてない場合空文字列にする
-      parent = "";
+    if (event.queryStringParameters.parent) {
+      parent = event.queryStringParameters.parent;
     }
   }
   let values = [];
-  if (event.multiValueQueryStringParameters !== null) {
+  if (event.multiValueQueryStringParameters && event.multiValueQueryStringParameters.values) {
     values = event.multiValueQueryStringParameters.values;
   }
 
   try {
-    const readXml = await streamFileRead('choice.xml'); //ファイル読み込み、完了まで待機
-    const readJson = JSON.parse(parser.toJson(readXml));
-    let responseJson = {
-      items: {
-        item: []
-      }
-    };
-    const items = readJson.items.item;
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].display.indexOf(query) !== -1) {
-        //displayにqueryで指定された文字列を含むものを選ぶ
-        //queryが指定されていない場合は全て通す
-        if (items[i].value.startsWith(parent)) {
-          //valueがparentで指定された文字列から始まるものを選ぶ
-          //parentが指定されていない場合は全て通す
-          if ((values === undefined) || (values.length === 0) || (values.indexOf(items[i].value) !== -1)) {
-            //valueがvaluesに含まれる文字列と完全一致するものを選ぶ
-            //valuesが指定されていない場合は全て通す
-            responseJson.items.item.push(items[i]);
-          }
-        }
-      }
-    }
-    const responseXml = parser.toXml(responseJson)
+    const responseJson = await streamFileRead('choice.xml', query, parent, values); //ファイル読み込み、完了まで待機
+    const responseXml = xmlparser.toXml(responseJson)
     response = formatResponse(responseXml);
   } catch (e) {
     console.log(e);
@@ -60,7 +36,7 @@ function formatResponse(body) {
   const response = {
     "statusCode": 200,
     "headers": {
-      "Content-Type": "text/plain; charset=utf-8"
+      "Content-Type": "application/xml; charset=utf-8"
     },
     "isBase64Encoded": false,
     "body": body,
@@ -81,15 +57,56 @@ function formatError(error) {
   return response;
 }
 
-function streamFileRead(fileName) {
+function streamFileRead(fileName, query, parent, values) {
   return new Promise((resolve, reject) => {
     const stream = fs.createReadStream(fileName, {
       encoding: "utf8",         // 文字コード
-      highWaterMark: 1024       // 一度に取得するbyte数
+      highWaterMark: 1024       // 一度に取得する byte 数
     });
-    let data = "";     // 読み込んだデータ
+    let data = {
+      items: {
+        item: []
+      }
+    };// 読み込んだデータ
+    let parser = new xmlstream(); //XML のパーサー
 
-    // データを取得する度に実行される
+    parser.on('opentag', (name, attrs) => {
+      // name = 'item'
+      // attrs = { value: '01', display: 'display' }
+      if (name === 'item') {
+        const attrsTmp = {
+          value: attrs.value,
+          display: attrs.display.slice(0, -2)
+        }
+        //要件に合うもののみ data に入れる
+        if (attrsTmp.display.indexOf(query) !== -1) {
+          //display に query で指定された文字列を含むものを選ぶ
+          //query が指定されていない場合は全て通す
+          if (attrsTmp.value.startsWith(parent)) {
+            //value が parent で指定された文字列から始まるものを選ぶ
+            //parent が指定されていない場合は全て通す
+            if ((query !== "") || (parent !== "") || (values.length === 0) || (values.indexOf(attrsTmp.value) !== -1)) {
+              //value が values に含まれる文字列と完全一致するものを選ぶ
+              //query, parent が指定されているか、values が指定されていない場合は全て通す
+              data.items.item.push(attrsTmp);
+            }
+          }
+        }
+      }
+    });
+
+    parser.on('finish', () => {
+      // Stream is completed
+      resolve(data)
+    });
+
+    parser.on('error', err => {
+      // Handle a parsing error
+      reject(err.message);
+    });
+
+    stream.pipe(parser);
+    /*/ データを取得する度に実行される
     stream.on("data", (chunk) => {
       data += chunk.toString("utf8");
     });
@@ -102,6 +119,6 @@ function streamFileRead(fileName) {
     // エラー処理
     stream.on("error", (err) => {
       reject(err.message);
-    });
+    });*/
   })
 }
