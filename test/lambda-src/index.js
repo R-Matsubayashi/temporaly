@@ -83,7 +83,7 @@ function streamFileRead(fileName, query, parent, values) {
         else if ((values.length !== 0) && (values.indexOf(attrsTmp.value) === -1)) {return('');}
         //query, parent が指定されておらず、value が指定されていて、value が values に含まれる文字列と完全一致しないならば弾く
         else{data.items.item.push(attrsTmp);}
-        //
+        //上の条件で弾かれなければ data に入れる
       }
     });
 
