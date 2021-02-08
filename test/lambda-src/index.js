@@ -76,12 +76,12 @@ function streamFileRead(fileName, query, parent, values) {
           display: attrs.display.slice(0, -2)
         }//display の最後に' /'が含まれてしまうため取り除く
         //要件に合うもののみ data に入れる
-        if ((query !== "") && (attrsTmp.display.indexOf(query) === -1)) {return('');}
+        if ((query !== "") && (attrsTmp.display.indexOf(query) === -1)) {return;}
         //query が指定されていて、display に query で指定された文字列を含まないならば弾く
-        else if ((parent !== "") && (!attrsTmp.value.startsWith(parent))) {return('');}
+        else if ((parent !== "") && (!attrsTmp.value.startsWith(parent))) {return;}
         //parent が指定されていて、value が parent で指定された文字列から始まらないならば弾く
-        else if ((values.length !== 0) && (values.indexOf(attrsTmp.value) === -1)) {return('');}
-        //query, parent が指定されておらず、value が指定されていて、value が values に含まれる文字列と完全一致しないならば弾く
+        else if ((values.length !== 0) && (values.indexOf(attrsTmp.value) === -1)) {return;}
+        //value が指定されていて、value が values に含まれる文字列と完全一致しないならば弾く
         else{data.items.item.push(attrsTmp);}
         //上の条件で弾かれなければ data に入れる
       }
