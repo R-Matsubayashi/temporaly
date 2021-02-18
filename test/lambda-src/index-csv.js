@@ -1,6 +1,6 @@
 const xmlparser = require('xml2json');
 const fs = require('fs');
-const xmlstream = require('node-xml-stream')
+const readline = require("readline");
 
 exports.handler = async (event) => {
   console.log("Starting ...");
@@ -20,7 +20,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const responseJson = await streamFileRead('choice.xml', query, parent, values); //ファイル読み込み、完了まで待機
+    const responseJson = await streamFileRead('choice.csv', query, parent, values); //ファイル読み込み、完了まで待機
     const responseXml = xmlparser.toXml(responseJson)
     return formatResponse(responseXml);
   } catch (e) {
@@ -65,43 +65,34 @@ function streamFileRead(fileName, query, parent, values) {
         item: []
       }
     };// 読み込んだデータ
-    const parser = new xmlstream(); //XML のパーサー
 
-    parser.on('opentag', (name, attrs) => {
-      // name = 'item'
-      // attrs = { value: '01', display: 'display' }
-      if (name === 'item') {
-        const attrsTmp = {
-          value: attrs.value,
-          display: attrs.display.slice(0, -2)
-        }//display の最後に' /'が含まれてしまうため取り除く
-        //要件に合うもののみ data に入れる
-        if ((query !== "") && (attrsTmp.display.indexOf(query) === -1)) {return;}
-        //query が指定されていて、display に query で指定された文字列を含まないならば弾く
-        else if ((parent !== "") && (!attrsTmp.value.startsWith(parent))) {return;}
-        //parent が指定されていて、value が parent で指定された文字列から始まらないならば弾く
-        else if ((values.length !== 0) && (values.indexOf(attrsTmp.value) === -1)) {return;}
-        //value が指定されていて、value が values に含まれる文字列と完全一致しないならば弾く
-        else{data.items.item.push(attrsTmp);}
-        //上の条件で弾かれなければ data に入れる
-      }
+    // readlineにStreamを渡す
+    const reader = readline.createInterface({ input: stream });
+
+    reader.on("line", (line) => {
+      const array = line.split(',');
+      const attrsTmp = {
+        value: array[0],
+        display: array[1]
+      };
+      //要件に合うもののみ data に入れる
+      if ((query !== "") && (attrsTmp.display.indexOf(query) === -1)) { return; }
+      //query が指定されていて、display に query で指定された文字列を含まないならば弾く
+      else if ((parent !== "") && (!attrsTmp.value.startsWith(parent))) { return; }
+      //parent が指定されていて、value が parent で指定された文字列から始まらないならば弾く
+      else if ((values.length !== 0) && (values.indexOf(attrsTmp.value) === -1)) { return; }
+      //value が指定されていて、value が values に含まれる文字列と完全一致しないならば弾く
+      else { data.items.item.push(attrsTmp); }
+      //上の条件で弾かれなければ data に入れる
     });
 
-    parser.on('finish', () => {
-      // Stream is completed
+    reader.on("close", () => {
       resolve(data);
     });
 
-    parser.on('error', err => {
-      // Handle a parsing error
-      reject(err);
-    });
-
-    // Stream のエラー処理
+    // エラー処理
     stream.on("error", (err) => {
       reject(err);
     });
-
-    stream.pipe(parser);
   })
 }
